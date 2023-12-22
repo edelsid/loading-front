@@ -40,10 +40,6 @@ module.exports = {
       template: './src/index.html',
       filename: './index.html',
     }),
-    new HtmlWebPackPlugin({
-      template: './src/offline.html',
-      filename: './offline.html',
-    }),
     new MiniCssExtractPlugin({
       filename: '[name].css',
       chunkFilename: '[id].css',

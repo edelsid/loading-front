@@ -7,9 +7,10 @@ self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open('loading-cache').then((cache) => {
       cache.addAll([
+        './',
         './index.html',
         './index.css',
-        './offline.html',
+        './index.js',
       ]);
     }),
   );
@@ -21,54 +22,30 @@ self.addEventListener('activate', () => {
 });
 
 async function cacheResponse(e) {
+  const cacheData = await caches.match(e.request);
   let response;
+
+  if (cacheData) {
+    return cacheData;
+  }
 
   try {
     response = await fetch(e.request);
-  } catch (error) {
-    console.log(`worker error: ${error}`);
-    const matchResponse = await caches.match(e.request);
-
-    if (matchResponse) {
-      return matchResponse;
-    }
-    return true;
-  }
-
-  const cache = await caches.open('loading-cache');
-  cache.put(e.request, response.clone());
-  return response;
-}
-
-async function cacheResponseOffline(e) {
-  let response;
-
-  try {
-    response = await fetch(e.request);
-    if (response.status === 500) {
-      return await caches.match('./offline.html');
+    if (response.status === 404) {
+      return response;
     }
   } catch (error) {
-    console.log(`worker error: ${error}`);
-    const matchResponse = await caches.match(e.request);
-
-    if (matchResponse) {
-      return matchResponse;
-    }
-    return caches.match('./offline.html');
+    response.status = 404;
+    return response;
   }
 
-  const cache = await caches.open('loading-cache');
-  cache.put(e.request, response.clone());
+  // const cache = await caches.open('loading-cache');
+  // cache.put(e.request, response.clone());
+
   return response;
 }
 
 self.addEventListener('fetch', (e) => {
   console.log('Working on request');
-  const url = new URL(e.request.url);
-  if (url.pathname === '/' || url.pathname === '/news') {
-    e.respondWith(cacheResponseOffline(e));
-  } else {
-    e.respondWith(cacheResponse(e));
-  }
+  e.respondWith(cacheResponse(e));
 });

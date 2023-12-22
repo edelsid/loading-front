@@ -1,5 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable no-restricted-globals */
+import Post from './Post';
+import Offline from './Offline';
 
 export default class Widget {
   constructor(container, url) {
@@ -13,6 +15,7 @@ export default class Widget {
     }
     this.container = container;
     this.reload = document.querySelector('.reload');
+    this.news = document.querySelector('.news_list');
   }
 
   init() {
@@ -28,6 +31,7 @@ export default class Widget {
           });
       });
     }
+    // this.createRequest();
   }
 
   onClick() {
@@ -36,13 +40,30 @@ export default class Widget {
 
   async createRequest() {
     try {
-      const res = fetch(`${this.url}/news`, {
+      const res = await fetch(`${this.url}/news`, {
         method: 'GET',
       });
-      const result = await res;
-      location.replace(result.url);
+      try {
+        const result = await res.json();
+        while (this.news.firstChild) {
+          this.news.removeChild(this.news.lastChild);
+        }
+        result.forEach((element) => {
+          const post = new Post(element.date, element.header);
+          const postElement = post.create();
+          this.news.appendChild(postElement);
+        });
+      } catch (error) {
+        this.warning();
+      }
     } catch (error) {
-      console.log(error);
+      this.warning();
     }
+  }
+
+  warning() {
+    this.container.innerHTML = '';
+    const warning = new Offline();
+    this.container.appendChild(warning.element);
   }
 }
